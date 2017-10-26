@@ -1,5 +1,4 @@
 import { Template } from 'meteor/templating';
-import { Tracker } from 'meteor/tracker';
 import { ReactiveDict } from 'meteor/reactive-dict';
 import { _ } from 'meteor/underscore';
 import { FlowRouter } from 'meteor/kadira:flow-router';
@@ -15,6 +14,7 @@ Template.Add_Contact_Page.onCreated(function onCreated() {
   this.messageFlags = new ReactiveDict();
   this.messageFlags.set(displayErrorMessages, false);
   this.context = createContext;
+  this.subscribe('Contacts');
 });
 
 Template.Add_Contact_Page.helpers({
@@ -47,9 +47,13 @@ Template.Add_Contact_Page.events({
     // Determine validity.
     instance.context.validate(newContactData);
     if (instance.context.isValid()) {
-      Contacts.insert(newContactData);
-      instance.messageFlags.set(displayErrorMessages, false);
-      FlowRouter.go('Home_Page');
+      if (Contacts.findOne({ first: newContactData.first, last: newContactData.last })) {
+        instance.messageFlags.set(displayErrorMessages, true);
+      } else {
+        Contacts.insert(newContactData);
+        instance.messageFlags.set(displayErrorMessages, false);
+        FlowRouter.go('Home_Page');
+      }
     } else {
       instance.messageFlags.set(displayErrorMessages, true);
     }
